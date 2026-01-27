@@ -1,0 +1,12 @@
+google-api-python-client
+pandas
+nltk
+scikit-learn
+matplotlib
+joblib
+flask
+flask-cors
+requests
+python-dotenv
+waitress
+textblob
