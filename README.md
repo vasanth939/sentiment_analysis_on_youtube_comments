@@ -1,4 +1,4 @@
-# YouTube Insight AI
+# Sentiment Analysis for YouTube Comments using AI
 
 Advanced Sentiment Analysis & Transcript Intelligence for YouTube, powered by Python and AI.
 

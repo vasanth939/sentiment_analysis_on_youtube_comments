@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Architecture Diagrams</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+
+        .diagram-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            color: #333;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="diagram-container">
+        <h2>1. High-Level System Architecture</h2>
+        <div class="mermaid">
+            graph LR
+            subgraph Client ["Frontend (User Interface)"]
+            Browser[("Web Browser")]
+            HTML["HTML5 / CSS3 (Glassmorphism)"]
+            JS["JavaScript (AJAX)"]
+            Charts["Charts.js Visualization"]
+
+            Browser -- Renders --> HTML
+            HTML -- Uses --> JS
+            JS -- Uses --> Charts
+            end
+
+            subgraph Server ["Backend (Flask Server)"]
+            Flask["Flask App (app.py)"]
+            Fetcher["Data Fetcher (fetch_comments.py)"]
+            Analyzer["Sentiment Engine (predict.py)"]
+            VADER[["VADER Lexicon"]]
+
+            Flask -- Calls --> Fetcher
+            Flask -- Calls --> Analyzer
+            Analyzer -- Uses --> VADER
+            end
+
+            subgraph External ["External Services"]
+            YT[("YouTube Data API v3")]
+            end
+
+            subgraph Data ["Data Storage"]
+            CSV[("CSV Files (data/comments.csv)")]
+            end
+
+            %% Data Flow
+            JS -- "1. Send Video URL (POST /analyze)" --> Flask
+            Flask -- "2. Request Comments" --> Fetcher
+            Fetcher -- "3. API Request" --> YT
+            YT -- "4. JSON Response" --> Fetcher
+            Fetcher -- "5. Save Raw Comments" --> CSV
+            Flask -- "6. Read Data" --> CSV
+            Flask -- "7. Process Text" --> Analyzer
+            Analyzer -- "8. Return Sentiment Scores" --> Flask
+            Flask -- "9. Return Analysis JSON" --> JS
+            JS -- "10. Render Charts" --> Browser
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>2. Data Flow Diagram (Sequence)</h2>
+        <div class="mermaid">
+            sequenceDiagram
+            participant User
+            participant Frontend as Frontend (JS)
+            participant Backend as Flask Server
+            participant YT as YouTube API
+            participant Model as VADER Model
+
+            User->>Frontend: Enters YouTube URL
+            Frontend->>Backend: POST /analyze {url}
+
+            rect rgb(240, 248, 255)
+            note right of Backend: Data Acquisition Phase
+            Backend->>YT: Fetch Video Metadata
+            YT-->>Backend: Return Title, Views, Likes
+            Backend->>YT: Fetch Comments (NextPageToken loop)
+            YT-->>Backend: Return Comment Threads
+            Backend->>Backend: Save to comments.csv
+            end
+
+            rect rgb(255, 250, 240)
+            note right of Backend: Analysis Phase
+            Backend->>Backend: Read comments.csv
+            loop For Each Comment
+            Backend->>Model: Predict Sentiment(text)
+            Model-->>Backend: Return {Positive, Negative, Neutral}
+            end
+            Backend->>Backend: Aggregate Stats & Trends
+            end
+
+            Backend-->>Frontend: Return JSON {counts, comments, narrative}
+            Frontend->>User: Display Charts & Insights
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>3. Component Diagram</h2>
+        <div class="mermaid">
+            classDiagram
+            class App_py {
+            +Flask app
+            +route('/')
+            +route('/analyze')
+            +route('/predict_text')
+            }
+
+            class Fetch_Comments_py {
+            +fetch_video_details(url)
+            +fetch_comments(url)
+            +get_video_id(url)
+            }
+
+            class Predict_py {
+            +predict_sentiment(text)
+            -extract_features()
+            }
+
+            class Analysis_py {
+            +get_common_words(comments)
+            +generate_narrative(stats)
+            +get_sentiment_trend(results)
+            }
+
+            class External_Libs {
+            +Google_API_Client
+            +NLTK_VADER
+            +Pandas
+            +Flask_Cors
+            }
+
+            App_py --> Fetch_Comments_py : Calls
+            App_py --> Predict_py : Calls
+            App_py --> Analysis_py : Calls
+            Fetch_Comments_py --> External_Libs : Uses (Google API)
+            Predict_py --> External_Libs : Uses (NLTK)
+            App_py --> External_Libs : Uses (Flask/Pandas)
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>4. User Workflow Activity Diagram</h2>
+        <div class="mermaid">
+            flowchart TD
+            Start([User Starts]) --> Input[/Enter YouTube URL/]
+            Input --> Click{Click "Analyze"}
+            Click --> Valid{Is URL Valid?}
+
+            Valid -- No --> Error[Show Error Toast]
+            Valid -- Yes --> Loading[Show "Scanning" Animation]
+
+            Loading --> FetchAPI[Backend: Fetch Video Metadata]
+            FetchAPI --> CheckLive{Is Live Stream?}
+
+            CheckLive -- Yes --> ChatDownloader[Fetch Live Chat Replay]
+            CheckLive -- No --> CommentThreads[Fetch Standard Comments]
+
+            ChatDownloader --> Preprocess[Clean Text & Remove Emojis]
+            CommentThreads --> Preprocess
+
+            Preprocess --> VADER[Apply VADER Sentiment Engine]
+            VADER --> Score{Compound Score}
+
+            Score -- > 0.05 --> Pos[Label: Positive]
+            Score -- < -0.05 --> Neg[Label: Negative]
+                Score -- Else --> Neu[Label: Neutral]
+
+                Pos --> Aggr[Aggregate Statistics]
+                Neg --> Aggr
+                Neu --> Aggr
+
+                Aggr --> JSON[Generate JSON Response]
+                JSON --> Render[Frontend: Render Charts & Word Cloud]
+                Render --> End([User Views Insights])
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>5. Use Case Diagram</h2>
+        <div class="mermaid">
+            usecaseDiagram
+            actor User as "End User"
+            actor YT as "YouTube API"
+
+            package "Sentiment Analysis Agent" {
+            usecase "Input Video URL" as UC1
+            usecase "View Video Statistics" as UC2
+            usecase "View Sentiment Distribution" as UC3
+            usecase "View Trend Analysis" as UC4
+            usecase "View Word Cloud" as UC5
+            usecase "Download Report" as UC6
+            usecase "System Alert Handling" as UC7
+            }
+
+            User --> UC1
+            User --> UC2
+            User --> UC3
+            User --> UC4
+            User --> UC5
+            User --> UC6
+
+            UC1 ..> UC7 : <<include>>
+                UC1 --> YT : Fetches Data
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>6. Deployment Diagram</h2>
+        <div class="mermaid">
+            graph TD
+            subgraph "User Workstation (Localhost)"
+            Browser[("Web Browser (Chrome/Edge)")]
+            end
+
+            subgraph "Application Server (Python/Flask)"
+            WSGI["Waitress WSGI Server"]
+            FlaskApp["Flask Application"]
+            NLTK["NLTK Data (VADER Lexicon)"]
+
+            WSGI -- Hosts --> FlaskApp
+            FlaskApp -- Uses --> NLTK
+            end
+
+            subgraph "Cloud / Internet"
+            YouTube[("YouTube Servers")]
+            end
+
+            Browser -- "HTTP / Port 8080" --> WSGI
+            FlaskApp -- "HTTPS / JSON API" --> YouTube
+        </div>
+    </div>
+
+</body>
+
+</html>

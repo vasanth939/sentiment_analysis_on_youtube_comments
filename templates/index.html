@@ -4,735 +4,1228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sentiment Analysis Dashboard</title>
+    <title>YouTube Sentiment Analysis</title>
 
-    <!-- Fonts: Inter for professional look -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Icons -->
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
-    <!-- Charts -->
+    <!-- Stylesheet (No Tailwind) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Chart.js & WordCloud -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-    <!-- Styles -->
-    <link rel="stylesheet" href="../static/style-advanced.css">
 </head>
 
 <body>
-
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="brand">
-                <i class="fa-solid fa-brain brand-icon"></i>
-                <span>Insight AI</span>
+    <!-- Sidebar -->
+    <aside class="app-sidebar">
+        <div>
+            <!-- Logo -->
+            <div class="sidebar-header">
+                <div class="brand-icon"><i class="fa-solid fa-brain"></i></div>
+                <span class="brand-text hide-on-mobile">Insight <span>AI</span></span>
             </div>
 
-            <nav class="nav-menu">
-                <a href="#" class="nav-item active"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
-                <a href="#analysis" class="nav-item"><i class="fa-solid fa-magnifying-glass"></i> Analysis</a>
-                <a href="#comments" class="nav-item"><i class="fa-solid fa-comments"></i> Comments</a>
-                <a href="#reports" class="nav-item"><i class="fa-solid fa-file-export"></i> Reports</a>
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active">
+                    <i class="fa-solid fa-chart-pie nav-icon"></i>
+                    <span class="hide-on-mobile">Dashboard</span>
+                </button>
+                <button onclick="switchTab('analysis')" id="nav-analysis" class="nav-item">
+                    <i class="fa-solid fa-magnifying-glass nav-icon"></i>
+                    <span class="hide-on-mobile">Analysis</span>
+                </button>
+                <button onclick="switchTab('comments')" id="nav-comments" class="nav-item">
+                    <i class="fa-solid fa-comments nav-icon"></i>
+                    <span class="hide-on-mobile">Comments</span>
+                </button>
+                <button onclick="switchTab('reports')" id="nav-reports" class="nav-item">
+                    <i class="fa-solid fa-file-export nav-icon"></i>
+                    <span class="hide-on-mobile">Reports</span>
+                </button>
             </nav>
+        </div>
 
-            <div class="sidebar-footer">
-                <div class="user-profile">
-                    <div class="avatar"><i class="fa-solid fa-server"></i></div>
-                    <div class="user-info">
-                        <h4>System Status</h4>
-                        <p><span style="color: #10B981;">●</span> Online (VADER)</p>
+        <!-- System Status -->
+        <div class="sidebar-footer hide-on-mobile">
+            <div class="system-status">
+                <div class="status-icon"><i class="fa-solid fa-server"></i></div>
+                <div class="status-text">
+                    <h5>System Status</h5>
+                    <div class="status-indicator">
+                        <span class="status-dot"></span>
+                        <span>Online (LinearSVC)</span>
                     </div>
                 </div>
             </div>
-        </aside>
+        </div>
+    </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Header -->
-            <header class="top-bar">
-                <div class="header-titles">
-                    <h1>Sentiment Analysis for YouTube Comments using AI</h1>
-                    <p>Analyze public opinion instantly</p>
-                </div>
-                <div class="header-actions">
-                    <button class="icon-btn" title="Notifications" onclick="toggleNotifications()"><i
-                            class="fa-solid fa-bell"></i></button>
-                    <button class="btn-primary" onclick="downloadReport()">Download Report</button>
-                </div>
-            </header>
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar / Header -->
+        <header class="top-header">
+            <div id="headerContent">
+                <h2 class="header-title" id="pageTitle">Sentiment Analysis for YouTube Comments using AI</h2>
+                <p class="header-subtitle" id="pageSubtitle">Analyze public opinion instantly</p>
+            </div>
+            <div>
+                <button class="action-btn"><i class="fa-solid fa-bell"></i></button>
+            </div>
+        </header>
 
-            <!-- Input Section -->
-            <section class="input-section card">
-                <div class="input-wrapper">
-                    <i class="fa-brands fa-youtube input-icon"></i>
-                    <input type="text" id="videoUrl" placeholder="Paste YouTube Video URL here..." />
-                    <button onclick="analyzeVideo()" id="analyzeBtn">
-                        Analyze Comments <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <!-- Scrollable Content -->
+        <div class="scroll-area" id="scrollArea">
+
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="view-container">
+
+                <!-- Search Section -->
+                <div class="card card-padding search-card">
+                    <div class="search-icon"><i class="fa-brands fa-youtube"></i></div>
+                    <input type="text" id="videoUrl" class="search-input" placeholder="https://youtu.be/...">
+                    <button onclick="analyzeVideo()" id="analyzeBtn" class="btn-primary">
+                        Analyze Comments <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 0.75rem;"></i>
                     </button>
                 </div>
-                <div id="loader" class="loader hidden"></div>
-                <div id="errorMessage" class="error-banner hidden"></div>
-            </section>
 
-            <!-- Dashboard Content (Hidden initially) -->
-            <div id="dashboard" class="dashboard-grid hidden fade-in">
+                <!-- Initial Empty State -->
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-icon"><i class="fa-solid fa-chart-simple"></i></div>
+                    <h3 class="empty-title">Ready to Analyze</h3>
+                    <p class="empty-desc">Paste a YouTube URL above to view insights.</p>
+                </div>
 
-                <!-- KPI Cards -->
-                <div class="kpi-grid">
-                    <div class="kpi-card">
-                        <div class="kpi-icon positive"><i class="fa-solid fa-face-smile"></i></div>
-                        <div class="kpi-info">
-                            <h3>Positive Comments</h3>
-                            <h2 id="posPercent">0%</h2>
-                            <small id="posCountVal">0 comments</small>
+                <!-- Loader -->
+                <div id="loader" class="hidden loader-container">
+                    <div class="loader-content">
+                        <div class="spinner"></div>
+                        <span class="loader-text">Analyzing comments...</span>
+                    </div>
+                </div>
+
+                <!-- Live Stream Mode (Replay) -->
+                <div id="liveStreamArea" class="hidden">
+                    <div class="live-stream-header" style="margin-bottom: 1.5rem;">
+                        <div class="live-stream-title-wrap">
+                            <div class="ping-indicator">
+                                <span class="ping-anim"></span>
+                                <span class="ping-dot"></span>
+                            </div>
+                            <h2 class="live-stream-title">Live Sentiment Feed</h2>
+                        </div>
+                        <div class="live-controls">
+                            <button onclick="showDashboard()" class="btn-xs btn-dark">DASHBOARD</button>
+                            <button onclick="toggleStream(true)" id="btnPauseStream"
+                                class="btn-xs btn-light">PAUSE</button>
+                            <div class="progress-badge" id="streamProgress">0/0</div>
                         </div>
                     </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon negative"><i class="fa-solid fa-face-angry"></i></div>
-                        <div class="kpi-info">
-                            <h3>Negative Comments</h3>
-                            <h2 id="negPercent">0%</h2>
-                            <small id="negCountVal">0 comments</small>
+
+                    <div class="grid lg-grid-cols-3 gap-6 live-grid">
+                        <!-- Left: Real-time Graph -->
+                        <div class="card card-padding lg-col-span-2 flex flex-col">
+                            <h4 class="live-trend-header">Real-time Sentiment Trend</h4>
+                            <div class="live-chart-container">
+                                <canvas id="liveTrendChart"></canvas>
+                            </div>
+                            <div class="live-stats-row">
+                                <div class="live-stat-box positive">
+                                    <div class="live-stat-label positive">Positive</div>
+                                    <div class="live-stat-value positive" id="livePosCount">0</div>
+                                </div>
+                                <div class="live-stat-box negative">
+                                    <div class="live-stat-label negative">Negative</div>
+                                    <div class="live-stat-value negative" id="liveNegCount">0</div>
+                                </div>
+                                <div class="live-stat-box neutral">
+                                    <div class="live-stat-label neutral">Neutral</div>
+                                    <div class="live-stat-value neutral" id="liveNeuCount">0</div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon neutral"><i class="fa-solid fa-face-meh"></i></div>
-                        <div class="kpi-info">
-                            <h3>Neutral Comments</h3>
-                            <h2 id="neuPercent">0%</h2>
-                            <small id="neuCountVal">0 comments</small>
-                        </div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon total"><i class="fa-solid fa-comments"></i></div>
-                        <div class="kpi-info">
-                            <h3>Total Comments</h3>
-                            <h2 id="totalComments">0</h2>
+
+                        <!-- Right: Live Chat Box -->
+                        <div class="chat-container card">
+                            <div class="chat-header">
+                                <h4 class="chat-title">Live Chat</h4>
+                                <i class="fa-solid fa-comments" style="color: var(--text-light);"></i>
+                            </div>
+                            <div id="liveChatBox" class="chat-box">
+                                <div class="chat-wait-msg">Waiting for stream...</div>
+                            </div>
+                            <div class="chat-footer">Showing real-time comments</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Video Meta & Narrative -->
-                <div class="grid-2-1">
-                    <div class="card video-card">
-                        <img id="videoThumb" src="" alt="Video Thumbnail">
-                        <div class="video-info">
-                            <h3 id="videoTitle">Video Title</h3>
-                            <p id="channelName">Channel Name</p>
-                            <div class="meta-stats">
-                                <span><i class="fa-solid fa-eye"></i> <span id="viewCount">0</span></span>
-                                <span><i class="fa-solid fa-thumbs-up"></i> <span id="likeCount">0</span></span>
+                <!-- Analysis Results (Hidden by default, shown after replay or optionally) -->
+                <div id="dashboardContent" class="hidden">
+
+                    <!-- Dashboard Header / Switcher -->
+                    <div class="flex" style="justify-content: flex-end; margin-bottom: 1.5rem;">
+                        <button onclick="startLiveStream(currentData.comments)" class="btn-replay">
+                            <i class="fa-solid fa-play"></i> Replay Live Chat
+                        </button>
+                    </div>
+
+                    <!-- KPI Cards Code -->
+                    <div class="grid grid-cols-1 md-grid-cols-2 grid-cols-4 gap-6" style="margin-bottom: 2rem;">
+                        <!-- Positive -->
+                        <div class="card card-padding kpi-card positive">
+                            <div class="kpi-header">
+                                <div class="kpi-icon-box"><i class="fa-solid fa-face-smile"></i></div>
+                                <span class="kpi-label">Positive</span>
+                            </div>
+                            <h3 class="kpi-value" id="statPos">--%</h3>
+                            <p class="kpi-desc" id="statPosCount">0 comments</p>
+                        </div>
+                        <!-- Negative -->
+                        <div class="card card-padding kpi-card negative">
+                            <div class="kpi-header">
+                                <div class="kpi-icon-box"><i class="fa-solid fa-face-frown"></i></div>
+                                <span class="kpi-label">Negative</span>
+                            </div>
+                            <h3 class="kpi-value" id="statNeg">--%</h3>
+                            <p class="kpi-desc" id="statNegCount">0 comments</p>
+                        </div>
+                        <!-- Neutral -->
+                        <div class="card card-padding kpi-card neutral">
+                            <div class="kpi-header">
+                                <div class="kpi-icon-box"><i class="fa-solid fa-face-meh"></i></div>
+                                <span class="kpi-label">Neutral</span>
+                            </div>
+                            <h3 class="kpi-value" id="statNeu">--%</h3>
+                            <p class="kpi-desc" id="statNeuCount">0 comments</p>
+                        </div>
+                        <!-- Total -->
+                        <div class="card card-padding kpi-card total">
+                            <div class="kpi-header">
+                                <div class="kpi-icon-box"><i class="fa-solid fa-comments"></i></div>
+                                <span class="kpi-label">Total</span>
+                            </div>
+                            <h3 class="kpi-value" id="statTotal">0</h3>
+                            <p class="kpi-desc">Processed</p>
+                        </div>
+                    </div>
+
+                    <!-- Video & Narrative Row -->
+                    <div class="grid grid-cols-1 lg-grid-cols-3 gap-6" style="margin-bottom: 2rem;">
+                        <!-- Video Info -->
+                        <div class="card card-padding flex flex-col">
+                            <div class="video-info-box">
+                                <img id="videoThumb" src="" class="video-thumb" alt="Thumbnail">
+                                <div class="video-details">
+                                    <h4 id="videoTitle" class="video-title">...</h4>
+                                    <p id="channelName" class="channel-name">...</p>
+                                    <div class="video-stats">
+                                        <span><i class="fa-solid fa-eye"></i> <span id="viewCount">0</span></span>
+                                        <span><i class="fa-solid fa-thumbs-up"></i> <span id="likeCount">0</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Narrative -->
+                        <div class="card card-padding lg-col-span-2">
+                            <div class="narrative-header">
+                                <i class="fa-solid fa-robot narrative-icon"></i>
+                                <h4 class="narrative-title">AI Narrative Summary</h4>
+                            </div>
+                            <p id="narrativeText" class="narrative-text">Analysis required...</p>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="grid grid-cols-1 lg-grid-cols-2 gap-6">
+                        <!-- Donut -->
+                        <div class="card card-padding">
+                            <h4 class="chart-title">Sentiment Analysis Distribution</h4>
+                            <div class="chart-container-donut">
+                                <canvas id="sentimentChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Bar -->
+                        <div class="card card-padding">
+                            <h4 class="chart-title">Sentiment Count (Bar Chart)</h4>
+                            <div class="chart-container-bar">
+                                <canvas id="barChart"></canvas>
                             </div>
                         </div>
                     </div>
-                    <div class="card narrative-card">
-                        <h3><i class="fa-solid fa-robot"></i> AI Narrative Summary</h3>
-                        <p id="narrativeText">Loading AI insights...</p>
-                    </div>
-                </div>
 
-                <!-- Charts Row -->
-                <div class="charts-row">
-                    <div class="card chart-card">
-                        <h3>Sentiment Distribution</h3>
-                        <div class="chart-wrapper">
-                            <canvas id="sentimentChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="card chart-card">
-                        <h3>Sentiment Count (Bar Chart)</h3>
-                        <div class="chart-wrapper">
-                            <canvas id="barChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Word Cloud & AI Prediction -->
-                <div class="grid-2-1">
-                    <div class="card">
-                        <h3>🔥 Top Topics (Word Cloud)</h3>
-                        <div id="wordCloudCanvas" style="height: 300px; width: 100%;"></div>
-                    </div>
-
-                    <!-- AI Prediction Sandbox -->
-                    <div class="card ai-test-card">
-                        <h3>🧠 AI Prediction Sandbox</h3>
-                        <p>Test the model with your own text:</p>
-                        <div class="test-input">
-                            <input type="text" id="testText" placeholder="Tyoe something like 'This video is amazing!'">
-                            <button onclick="testSentiment()"><i class="fa-solid fa-bolt"></i></button>
-                        </div>
-                        <div id="testResult" class="test-result hidden">
-                            <span id="testLabel">POSITIVE</span>
-                            <span id="testConf">92%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Data Table -->
-                <div class="card table-card">
-                    <div class="card-header">
-                        <h3>Detailed Comments Analysis</h3>
-                        <span class="badge" id="tableCount">0</span>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="comments-table">
-                            <thead>
-                                <tr>
-                                    <th>Author</th>
-                                    <th>Comment</th>
-                                    <th>Sentiment</th>
-                                    <th>Confidence</th>
-                                </tr>
-                            </thead>
-                            <tbody id="commentsTableBody">
-                                <!-- Rows injected via JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Analysis Section (Detailed Charts) -->
-            <div id="analysis" class="dashboard-grid hidden fade-in">
-                <h2><i class="fa-solid fa-magnifying-glass-chart"></i> Deep Analysis</h2>
-                <div class="card">
-                    <h3>Trend Analysis</h3>
-                    <p>Sentiment evolution over time for this video.</p>
-                    <div style="height: 400px; width: 100%;">
-                        <canvas id="detailedTrendChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="grid-2-1">
-                    <div class="card">
-                        <h3>Top Positive Comment</h3>
-                        <div id="bestCommentBox"
-                            style="padding: 15px; background: #ecfdf5; border-radius: 8px; border-left: 4px solid #10B981;">
-                            Loading...
-                        </div>
-                    </div>
-                    <div class="card">
-                        <h3>Top Negative Comment</h3>
-                        <div id="worstCommentBox"
-                            style="padding: 15px; background: #fef2f2; border-radius: 8px; border-left: 4px solid #EF4444;">
-                            Loading...
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            <!-- Comments Section (Full Table) -->
-            <div id="comments" class="dashboard-grid hidden fade-in">
-                <h2><i class="fa-solid fa-comments"></i> Full Comments Explorer</h2>
-                <div class="card table-card">
-                    <div class="card-header">
-                        <h3>All Processed Comments</h3>
-                        <input type="text" id="tableSearch" placeholder="Search comments..." onkeyup="filterTable()"
-                            style="padding: 8px; border-radius: 5px; border: 1px solid #ddd; width: 250px;">
+            <!-- VIEW: COMMENTS -->
+            <div id="view-comments" class="hidden view-container">
+                <!-- AI Prediction Sandbox -->
+                <div class="card card-padding sandbox-card">
+                    <div class="sandbox-dec-1"></div>
+                    <div class="sandbox-dec-2"></div>
+                    <div class="sandbox-content">
+                        <div class="sandbox-title-wrap">
+                            <div class="sandbox-emoji">🧠</div>
+                            <h3 class="sandbox-title">AI Prediction Sandbox</h3>
+                        </div>
+                        <p class="sandbox-desc">Test the model with your own text:</p>
+                        <div class="sandbox-input-area">
+                            <input type="text" id="sandboxInput" class="sandbox-input" placeholder="Type a comment..."
+                                onkeydown="if(event.key === 'Enter') testSentiment()">
+                            <button onclick="testSentiment()" class="sandbox-btn">
+                                <i class="fa-solid fa-bolt"></i>
+                            </button>
+                        </div>
+                        <!-- Result Bar -->
+                        <div id="sandboxResult" class="hidden sandbox-result-wrap">
+                            <div class="sandbox-bar-container">
+                                <div id="sandboxBar" class="sandbox-bar" style="width: 100%">
+                                    <span id="sandboxLabel" class="sandbox-label">PENDING</span>
+                                </div>
+                                <div class="sandbox-score-overlay">
+                                    <span id="sandboxScore" class="sandbox-score">--%</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="comments-table">
-                            <thead>
-                                <tr>
-                                    <th>Author</th>
-                                    <th>Comment</th>
-                                    <th>Sentiment</th>
-                                    <th>Confidence</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fullCommentsTableBody">
-                                <!-- Rows injected via JS -->
-                            </tbody>
-                        </table>
+                </div>
+
+                <div class="card card-padding">
+                    <input type="text" id="tableSearch" onkeyup="filterTable()" placeholder="Search within comments..."
+                        class="table-search-input">
+                </div>
+                <div class="card table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Author</th>
+                                <th style="width: 50%;">Comment</th>
+                                <th>Sentiment</th>
+                                <th>Confidence</th>
+                                <th>Age</th>
+                            </tr>
+                        </thead>
+                        <tbody id="commentsTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW: ANALYSIS -->
+            <div id="view-analysis" class="hidden view-container">
+                <div class="view-header">
+                    <i class="fa-solid fa-magnifying-glass-chart view-icon"></i>
+                    <h2 class="view-title">Deep Analysis</h2>
+                </div>
+
+                <!-- Trend Chart -->
+                <div class="card card-padding">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                        <div>
+                            <h3 class="chart-title" style="margin-bottom: 0.25rem;">Trend Analysis</h3>
+                            <p style="color: var(--text-muted); font-size: 0.875rem;">Sentiment evolution over time for
+                                this video.</p>
+                        </div>
+                        <div style="display: flex; gap: 1rem; font-size: 0.75rem; font-weight: 500;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span
+                                    style="width: 2rem; height: 0.25rem; background: #bbf7d0; border: 1px solid #22c55e;"></span>
+                                <span style="color: var(--text-muted);">Positive Volume</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span
+                                    style="width: 2rem; height: 0.25rem; background: #fecaca; border: 1px solid #ef4444;"></span>
+                                <span style="color: var(--text-muted);">Negative Volume</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span
+                                    style="width: 2rem; height: 0.25rem; background: #e2e8f0; border: 1px solid #64748b;"></span>
+                                <span style="color: var(--text-muted);">Neutral Volume</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="trend-chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Comments -->
+                <div class="grid grid-cols-1 md-grid-cols-2 gap-6">
+                    <div class="card card-padding top-comment-card positive">
+                        <h4 class="top-comment-title">Top Positive Comment</h4>
+                        <div id="topPositiveContent">
+                            <div style="color: var(--text-light); font-style: italic;">No positive comments found.</div>
+                        </div>
+                    </div>
+                    <div class="card card-padding top-comment-card negative">
+                        <h4 class="top-comment-title">Top Negative Comment</h4>
+                        <div id="topNegativeContent">
+                            <div style="color: var(--text-light); font-style: italic;">No negative comments found.</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Reports Section -->
-            <div id="reports" class="dashboard-grid hidden fade-in">
-                <h2><i class="fa-solid fa-file-export"></i> Project Reports</h2>
-                <div class="grid-2-1">
-                    <div class="card">
-                        <h3>Export Summary</h3>
-                        <p>Download the analysis report in PDF or CSV format used for your project submission.</p>
-                        <div style="margin-top: 20px; display: flex; gap: 10px;">
-                            <button class="btn-primary" onclick="generatePDF()"><i class="fa-solid fa-file-pdf"></i>
-                                Download PDF</button>
-                            <button class="btn-primary" style="background: #10B981;" onclick="downloadReport()"><i
+            <!-- VIEW: REPORTS -->
+            <div id="view-reports" class="hidden view-container" style="max-width: 60rem;">
+                <div class="view-header">
+                    <i class="fa-solid fa-file-export view-icon"></i>
+                    <h2 class="view-title">Project Reports</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md-grid-cols-2 gap-6">
+                    <!-- Export Summary Card -->
+                    <div class="card card-padding export-card">
+                        <div>
+                            <h3 class="chart-title">Export Summary</h3>
+                            <p class="export-desc">Download the analysis report in PDF or CSV format used for your
+                                project submission.</p>
+                        </div>
+                        <div class="btn-group">
+                            <button onclick="downloadReportPDF()" class="btn-export-pdf"><i
+                                    class="fa-solid fa-file-pdf"></i> Download PDF</button>
+                            <button onclick="downloadReportCSV()" class="btn-export-csv"><i
                                     class="fa-solid fa-file-csv"></i> Download CSV</button>
                         </div>
                     </div>
-                    <div class="card">
-                        <h3>Model Metrics</h3>
-                        <ul>
-                            <li style="margin-bottom: 10px;"><strong>Model:</strong> VADER (Valence Aware Dictionary)
-                            </li>
-                            <li style="margin-bottom: 10px;"><strong>Precision:</strong> ~85% (Social Media Text)</li>
-                            <li style="margin-bottom: 10px;"><strong>Processing Time:</strong>
-                                < 20ms per comment</li>
-                            <li><strong>Status:</strong> <span style="color:#10B981; font-weight:bold;">Active &
-                                    Live</span></li>
-                        </ul>
+
+                    <!-- Model Metrics Card -->
+                    <div class="card card-padding">
+                        <h3 class="chart-title">Model Metrics</h3>
+                        <div class="metrics-list">
+                            <div class="metric-item"><span class="metric-label">• Model:</span><span>LinearSVC (Optimized ML
+                                    Model)</span></div>
+                            <div class="metric-item"><span class="metric-label">• Accuracy:</span><span>~91% (YouTube
+                                    Comments)</span></div>
+                            <div class="metric-item"><span class="metric-label">• Processing:</span><span>&lt; 20ms per
+                                    comment</span></div>
+                            <div class="metric-item"><span class="metric-label">• Status:</span><span
+                                    class="metric-value active">Active & Live</span></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
 
-    <!-- JavaScript Logic -->
+        </div>
+    </main>
+
+
     <script>
-        // --- 1. Main Analysis Logic ---
-        async function analyzeVideo() {
-            const url = document.getElementById('videoUrl').value;
-            const btn = document.getElementById('analyzeBtn');
-            const loader = document.getElementById('loader');
-            const errorMsg = document.getElementById('errorMessage');
-            const dashboard = document.getElementById('dashboard');
+        // --- LOGIC ---
+        let currentData = null;
+        let charts = {};
 
-            if (!url) {
-                alert("Please enter a URL");
-                return;
-            }
+        // Stream State
+        let streamInterval = null;
+        let streamIndex = 0;
+        let streamData = [];
+        let isStreamPaused = false;
+        let streamSpeed = 800; // ms
+        let liveCounts = { pos: 0, neg: 0, neu: 0 };
+        let liveChartData = { labels: [], pos: [], neg: [], neu: [] };
 
-            btn.disabled = true;
-            btn.innerHTML = 'Analyzing... <i class="fa-solid fa-spinner fa-spin"></i>';
-            loader.classList.remove('hidden');
-            errorMsg.classList.add('hidden');
-            dashboard.classList.add('hidden');
+        function switchTab(tabId) {
+            // Navbar styles
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('nav-' + tabId).classList.add('active');
 
-            try {
-                // Check health first (optional debug)
-                // const health = await fetch('/health');
-
-                const response = await fetch('/analyze', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    populateDashboard(data);
-                    dashboard.classList.remove('hidden');
-                } else {
-                    errorMsg.innerText = data.error || "An error occurred";
-                    errorMsg.classList.remove('hidden');
+            // View toggling
+            const views = ['dashboard', 'analysis', 'comments', 'reports'];
+            views.forEach(v => {
+                const el = document.getElementById('view-' + v);
+                if (el) {
+                    if (v === tabId) el.classList.remove('hidden');
+                    else el.classList.add('hidden');
                 }
+            });
 
-            } catch (err) {
-                console.error(err);
-                if (err.message.includes("Failed to fetch")) {
-                    errorMsg.innerText = "Error: Cannot connect to server. Is it running on port 8080? Check your terminal.";
-                } else {
-                    errorMsg.innerText = "Error: " + err.message;
-                }
-                errorMsg.classList.remove('hidden');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = 'Analyze Comments <i class="fa-solid fa-wand-magic-sparkles"></i>';
-                loader.classList.add('hidden');
+            // Header Title
+            const titleEl = document.getElementById('pageTitle');
+            const subTitleEl = document.getElementById('pageSubtitle');
+
+            if (tabId === 'dashboard') {
+                titleEl.textContent = "Sentiment Analysis for YouTube Comments using AI";
+                if (subTitleEl) subTitleEl.style.display = 'block';
+            } else {
+                titleEl.textContent = tabId.charAt(0).toUpperCase() + tabId.slice(1);
+                if (subTitleEl) subTitleEl.style.display = 'none';
             }
         }
 
-        let chartInstance = null;
-        let trendChartInstance = null;
+        function showDashboard() {
+            // Pause stream if running
+            isStreamPaused = true;
+            updatePlayButton();
 
-        function populateDashboard(data) {
-            // 1. KPI Cards
-            const total = data.counts.Positive + data.counts.Negative + data.counts.Neutral;
-            document.getElementById('totalComments').innerText = total;
+            document.getElementById('liveStreamArea').classList.add('hidden');
+            document.getElementById('dashboardContent').classList.remove('hidden');
+        }
 
-            document.getElementById('posPercent').innerText = ((data.counts.Positive / total) * 100).toFixed(1) + '%';
-            document.getElementById('posCountVal').innerText = data.counts.Positive + " comments";
+        async function analyzeVideo() {
+            const url = document.getElementById('videoUrl').value;
+            if (!url) return alert("Please enter a YouTube URL");
 
-            document.getElementById('negPercent').innerText = ((data.counts.Negative / total) * 100).toFixed(1) + '%';
-            document.getElementById('negCountVal').innerText = data.counts.Negative + " comments";
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('dashboardContent').classList.add('hidden');
+            document.getElementById('loader').classList.remove('hidden');
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('analyzeBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
 
-            document.getElementById('neuPercent').innerText = ((data.counts.Neutral / total) * 100).toFixed(1) + '%';
-            document.getElementById('neuCountVal').innerText = data.counts.Neutral + " comments";
+            try {
+                const res = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
 
-            // 2. Video Info
+                currentData = data;
+                renderDashboard(data);
+
+                document.getElementById('loader').classList.add('hidden');
+
+                // Switch view based on video type
+                if (data.meta.isLive) {
+                    startLiveStream(data.comments);
+                } else {
+                    document.getElementById('liveStreamArea').classList.add('hidden');
+                    document.getElementById('dashboardContent').classList.remove('hidden');
+                }
+
+                // Show Analysis tab hint or maybe auto-switch if user wants?
+                // keeping on dashboard for now.
+
+            } catch (e) {
+                alert("Error: " + e.message);
+                document.getElementById('loader').classList.add('hidden');
+            } finally {
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('analyzeBtn').innerHTML = 'Analyze Comments <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>';
+            }
+        }
+
+        function renderDashboard(data) {
+            // Meta
             document.getElementById('videoTitle').innerText = data.meta.title;
             document.getElementById('channelName').innerText = data.meta.channelTitle;
+            document.getElementById('videoThumb').src = data.meta.thumbnail;
             document.getElementById('viewCount').innerText = parseInt(data.meta.viewCount).toLocaleString();
             document.getElementById('likeCount').innerText = parseInt(data.meta.likeCount).toLocaleString();
-            document.getElementById('videoThumb').src = data.meta.thumbnail;
+            document.getElementById('narrativeText').innerText = data.narrative || "No narrative available.";
 
-            // 3. Narrative
-            document.getElementById('narrativeText').innerText = data.narrative;
+            // Stats
+            const total = data.comments.length;
+            const pos = data.counts.Positive;
+            const neg = data.counts.Negative;
+            const neu = data.counts.Neutral;
 
-            // 4. Charts - Pie
-            const ctx = document.getElementById('sentimentChart').getContext('2d');
-            if (chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, {
+            document.getElementById('statTotal').innerText = total.toLocaleString();
+
+            const pPct = Math.round((pos / total) * 100) || 0;
+            const nPct = Math.round((neg / total) * 100) || 0;
+            const nuPct = Math.round((neu / total) * 100) || 0;
+
+            document.getElementById('statPos').innerText = pPct + "%";
+            document.getElementById('statPosCount').innerText = pos.toLocaleString() + " comments";
+
+            document.getElementById('statNeg').innerText = nPct + "%";
+            document.getElementById('statNegCount').innerText = neg.toLocaleString() + " comments";
+
+            document.getElementById('statNeu').innerText = nuPct + "%";
+            document.getElementById('statNeuCount').innerText = neu.toLocaleString() + " comments";
+
+            // Charts
+            renderCharts(data);
+
+            // Table
+            renderTable(data.comments);
+
+            // Analysis Tab Data
+            renderAnalysis(data);
+        }
+
+        function renderAnalysis(data) {
+            // Trend Chart
+            renderTrendChart(data);
+
+            // Top Comments
+            const topPosDiv = document.getElementById('topPositiveContent');
+            const topNegDiv = document.getElementById('topNegativeContent');
+
+            if (data.top_comment) {
+                topPosDiv.innerHTML = `
+                    <p class="text-slate-600 italic text-sm mb-3">"${data.top_comment.comment}"</p>
+                    <div class="flex items-center gap-2 mt-2">
+                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-700">${data.top_comment.author.charAt(0)}</div>
+                        <span class="text-xs font-bold text-slate-700">${data.top_comment.author}</span>
+                        <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full ml-auto">Score: ${data.top_comment.score.toFixed(2)}</span>
+                    </div>
+                `;
+            } else {
+                topPosDiv.innerHTML = `<p class="text-slate-400 italic">No positive comments found.</p>`;
+            }
+
+            if (data.worst_comment) {
+                topNegDiv.innerHTML = `
+                    <p class="text-slate-600 italic text-sm mb-3">"${data.worst_comment.comment}"</p>
+                    <div class="flex items-center gap-2 mt-2">
+                        <div class="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-xs font-bold text-red-700">${data.worst_comment.author.charAt(0)}</div>
+                        <span class="text-xs font-bold text-slate-700">${data.worst_comment.author}</span>
+                        <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full ml-auto">Score: ${data.worst_comment.score.toFixed(2)}</span>
+                    </div>
+                `;
+            } else {
+                topNegDiv.innerHTML = `<p class="text-slate-400 italic">No negative comments found.</p>`;
+            }
+        }
+
+        function renderTrendChart(data) {
+            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            if (charts.trend) charts.trend.destroy();
+
+            // Default empty if no trend data
+            const dates = data.trend_dates && data.trend_dates.length ? data.trend_dates : ['Day 1', 'Day 2', 'Day 3'];
+            const posData = data.trend_pos && data.trend_pos.length ? data.trend_pos : [0, 0, 0];
+            const negData = data.trend_neg && data.trend_neg.length ? data.trend_neg : [0, 0, 0];
+            const neuData = data.trend_neu && data.trend_neu.length ? data.trend_neu : [0, 0, 0];
+
+            charts.trend = new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Positive Volume',
+                            data: posData,
+                            borderColor: '#22c55e', // Green-500
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)', // Green with opacity
+                            borderWidth: 2,
+                            tension: 0.4, // Smooth casing
+                            fill: true,
+                            pointBackgroundColor: '#22c55e',
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        },
+                        {
+                            label: 'Negative Volume',
+                            data: negData,
+                            borderColor: '#ef4444', // Red-500
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)', // Red with opacity
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#ef4444',
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        },
+                        {
+                            label: 'Neutral Volume',
+                            data: neuData,
+                            borderColor: '#64748b', // Slate-500
+                            backgroundColor: 'rgba(100, 116, 139, 0.1)', // Slate with opacity
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#64748b',
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f1f5f9' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }, // Custom legend used in HTML
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1e293b',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: true
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        function renderCharts(data) {
+            Chart.defaults.font.family = "Inter";
+            Chart.defaults.color = "#64748b";
+
+            // --- Donut Chart ---
+            const ctxDonut = document.getElementById('sentimentChart').getContext('2d');
+            if (charts.donut) charts.donut.destroy();
+            charts.donut = new Chart(ctxDonut, {
                 type: 'doughnut',
                 data: {
                     labels: ['Positive', 'Negative', 'Neutral'],
                     datasets: [{
                         data: [data.counts.Positive, data.counts.Negative, data.counts.Neutral],
-                        backgroundColor: ['#10B981', '#EF4444', '#6B7280'],
+                        backgroundColor: ['#22c55e', '#ef4444', '#cbd5e1'],
                         borderWidth: 0,
-                        hoverOffset: 10
+                        hoverOffset: 4
                     }]
                 },
                 options: {
-                    responsive: true,
                     maintainAspectRatio: false,
+                    cutout: '75%',
                     plugins: {
                         legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8 } }
-                    },
-                    cutout: '70%'
+                    }
                 }
             });
 
-            // 5. Trend Chart
-            // 5. Bar Chart
-            const barCtx = document.getElementById('barChart').getContext('2d');
-            if (window.barChartInstance) window.barChartInstance.destroy();
+            // --- Bar Chart ---
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            if (charts.bar) charts.bar.destroy();
 
-            window.barChartInstance = new Chart(barCtx, {
+            charts.bar = new Chart(ctxBar, {
                 type: 'bar',
                 data: {
                     labels: ['Positive', 'Negative', 'Neutral'],
                     datasets: [{
                         label: 'Comment Count',
                         data: [data.counts.Positive, data.counts.Negative, data.counts.Neutral],
-                        backgroundColor: ['#10B981', '#EF4444', '#6B7280'],
-                        borderRadius: 5
+                        backgroundColor: ['#22c55e', '#ef4444', '#64748b'],
+                        borderRadius: 6,
+                        barThickness: 50
                     }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // --- LIVE STREAM FUNCTIONS ---
+
+        function startLiveStream(comments) {
+            // Show Live Area, Hide Static Dashboard
+            document.getElementById('liveStreamArea').classList.remove('hidden');
+            document.getElementById('dashboardContent').classList.add('hidden');
+
+            // Reset State
+            streamData = comments; // Assuming comments are already sorted or we sort them
+            // Sort by date just in case
+            // streamData.sort((a, b) => new Date(a.date) - new Date(b.date)); 
+
+            streamIndex = 0;
+            liveCounts = { pos: 0, neg: 0, neu: 0 };
+            document.getElementById('liveChatBox').innerHTML = '';
+
+            // Initialize Live Chart
+            initLiveChart();
+
+            // Start Loop
+            clearInterval(streamInterval);
+            isStreamPaused = false;
+            updatePlayButton();
+
+            // Faster speed if many comments
+            streamSpeed = streamData.length > 500 ? 200 : 600;
+
+            streamInterval = setInterval(streamTick, streamSpeed);
+        }
+
+        function toggleStream(userAction) {
+            if (userAction) {
+                isStreamPaused = !isStreamPaused;
+                updatePlayButton();
+            }
+        }
+
+        function updatePlayButton() {
+            const btn = document.getElementById('btnPauseStream');
+            if (isStreamPaused) {
+                btn.innerText = "RESUME";
+                btn.classList.add('bg-green-100', 'text-green-700');
+                btn.classList.remove('bg-slate-200', 'text-slate-700');
+            } else {
+                btn.innerText = "PAUSE";
+                btn.classList.remove('bg-green-100', 'text-green-700');
+                btn.classList.add('bg-slate-200', 'text-slate-700');
+            }
+        }
+
+        function initLiveChart() {
+            const ctx = document.getElementById('liveTrendChart').getContext('2d');
+            if (charts.live) charts.live.destroy();
+
+            // Initial empty data
+            const initialLabels = Array(20).fill('');
+            const initialData = Array(20).fill(null);
+
+            charts.live = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: initialLabels,
+                    datasets: [
+                        {
+                            label: 'Sentiment Score',
+                            data: initialData,
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    animation: {
+                        duration: streamSpeed * 0.8,
+                        easing: 'linear'
+                    },
                     scales: {
-                        y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
-
-            /* Trend Chart Removed per user request */
-            if (false) {
-                trendChartInstance = new Chart(trendCtx, {
-                    type: 'line',
-                    data: {
-                        labels: data.trend_dates,
-                        datasets: [
-                            {
-                                label: 'Positive',
-                                data: data.trend_pos,
-                                borderColor: '#10B981',
-                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                fill: true,
-                                tension: 0.4
-                            },
-                            {
-                                label: 'Negative',
-                                data: data.trend_neg,
-                                borderColor: '#EF4444',
-                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                fill: true,
-                                tension: 0.4
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { position: 'top' } },
-                        scales: {
-                            x: { grid: { display: false } },
-                            y: { grid: { borderDash: [5, 5] }, beginAtZero: true }
+                        y: {
+                            min: -1,
+                            max: 1,
+                            grid: { color: '#f1f5f9' },
+                            ticks: { display: false } // Hide Y labels for cleaner look or keep them
+                        },
+                        x: {
+                            display: false // Hide X axis
                         }
-                    }
-                });
-            }
-
-            // 6. Word Cloud
-            const cloudCanvas = document.getElementById('wordCloudCanvas');
-            WordCloud(cloudCanvas, {
-                list: data.word_cloud.map(w => [w.word, w.weight * 5]),
-                gridSize: 10,
-                weightFactor: size => size * 2,
-                fontFamily: 'Inter',
-                color: 'random-dark',
-                backgroundColor: 'transparent',
-                rotateRatio: 0
-            });
-
-            // 7. Data Table (Top 10 only for brevity)
-            const tbody = document.getElementById('commentsTableBody');
-            tbody.innerHTML = '';
-            document.getElementById('tableCount').innerText = data.comments.length;
-
-            data.comments.slice(0, 10).forEach(c => {
-                const tr = document.createElement('tr');
-                let badgeClass = 'badge-neutral';
-                if (c.sentiment === 'Positive') badgeClass = 'badge-positive';
-                if (c.sentiment === 'Negative') badgeClass = 'badge-negative';
-
-                tr.innerHTML = `
-                    <td><div class="author-cell"><div class="avatar-sm">${c.author.charAt(0)}</div> ${c.author}</div></td>
-                    <td class="msg-cell">${c.comment}</td>
-                    <td><span class="status-badge ${badgeClass}">${c.sentiment}</span></td>
-                    <td>${c.confidence}%</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            // --- Populate Analysis Section ---
-            // Best Comment
-            if (data.top_comment) {
-                document.getElementById('bestCommentBox').innerHTML = `
-                    <strong>${data.top_comment.author}</strong><br>
-                    "${data.top_comment.comment}"<br>
-                    <small>Confidence: ${data.top_comment.confidence}% | Score: ${data.top_comment.score}</small>
-                `;
-            }
-            // Worst Comment
-            if (data.worst_comment) {
-                document.getElementById('worstCommentBox').innerHTML = `
-                    <strong>${data.worst_comment.author}</strong><br>
-                    "${data.worst_comment.comment}"<br>
-                    <small>Confidence: ${data.worst_comment.confidence}% | Score: ${data.worst_comment.score}</small>
-                `;
-            }
-
-            // Detailed Trend Chart
-            const detailedTrendCtx = document.getElementById('detailedTrendChart').getContext('2d');
-            // Check if instance exists (need global var or attach to window)
-            if (window.detailedTrendInstance) window.detailedTrendInstance.destroy();
-
-            if (data.trend_available) {
-                window.detailedTrendInstance = new Chart(detailedTrendCtx, {
-                    type: 'line',
-                    data: {
-                        labels: data.trend_dates,
-                        datasets: [
-                            {
-                                label: 'Positive Volume',
-                                data: data.trend_pos,
-                                borderColor: '#10B981',
-                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                fill: true,
-                                tension: 0.3
-                            },
-                            {
-                                label: 'Negative Volume',
-                                data: data.trend_neg,
-                                borderColor: '#EF4444',
-                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                fill: true,
-                                tension: 0.3
-                            }
-                        ]
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                    }
-                });
-            }
-
-            // --- Populate Full Comments Table ---
-            const fullBody = document.getElementById('fullCommentsTableBody');
-            fullBody.innerHTML = ''; // Clear
-            data.comments.forEach(c => {
-                const tr = document.createElement('tr');
-                let badgeClass = 'badge-neutral';
-                if (c.sentiment === 'Positive') badgeClass = 'badge-positive';
-                if (c.sentiment === 'Negative') badgeClass = 'badge-negative';
-
-                tr.innerHTML = `
-                    <td><div class="author-cell"><div class="avatar-sm">${c.author.charAt(0)}</div> ${c.author}</div></td>
-                    <td class="msg-cell">${c.comment}</td>
-                    <td><span class="status-badge ${badgeClass}">${c.sentiment}</span></td>
-                    <td>${c.confidence}%</td>
-                `;
-                fullBody.appendChild(tr);
+                    plugins: { legend: { display: false } }
+                }
             });
         }
 
-        // --- 2. AI Prediction Sandbox Logic ---
+        function streamTick() {
+            if (isStreamPaused) return;
+            if (streamIndex >= streamData.length) {
+                clearInterval(streamInterval);
+                isStreamPaused = true;
+                updatePlayButton();
+                // Maybe auto-show static dashboard after?
+                setTimeout(() => {
+                    // Optional: Show "Stream Ended" or switch to full analysis
+                    const doneDiv = document.createElement('div');
+                    doneDiv.className = "text-center p-4 bg-slate-100 rounded-lg text-slate-500 font-bold my-4";
+                    doneDiv.innerText = "Stream Replay Complete";
+                    document.getElementById('liveChatBox').appendChild(doneDiv);
+                    document.getElementById('liveChatBox').scrollTop = document.getElementById('liveChatBox').scrollHeight;
+
+                    // Setup 'Show Full Dashboard' button
+                    const btn = document.createElement('button');
+                    btn.className = "mt-2 w-full bg-brand-purple text-white py-2 rounded shadow hover:bg-purple-600";
+                    btn.innerText = "View Full Analysis";
+                    btn.onclick = () => {
+                        document.getElementById('liveStreamArea').classList.add('hidden');
+                        document.getElementById('dashboardContent').classList.remove('hidden');
+                    };
+                    document.getElementById('liveChatBox').appendChild(btn);
+
+                }, 1000);
+                return;
+            }
+
+            const comment = streamData[streamIndex];
+            streamIndex++;
+            document.getElementById('streamProgress').innerText = `${streamIndex}/${streamData.length}`;
+
+            // 1. Add to Chat Box
+            addChatBubble(comment);
+
+            // 2. Update Counts
+            if (comment.sentiment === 'Positive') liveCounts.pos++;
+            else if (comment.sentiment === 'Negative') liveCounts.neg++;
+            else liveCounts.neu++;
+
+            const total = liveCounts.pos + liveCounts.neg + liveCounts.neu;
+            const posPct = total > 0 ? Math.round((liveCounts.pos / total) * 100) : 0;
+            const negPct = total > 0 ? Math.round((liveCounts.neg / total) * 100) : 0;
+            const neuPct = total > 0 ? Math.round((liveCounts.neu / total) * 100) : 0;
+
+            document.getElementById('livePosCount').innerHTML = `${liveCounts.pos} <span class="text-xs font-normal text-slate-500">(${posPct}%)</span>`;
+            document.getElementById('liveNegCount').innerHTML = `${liveCounts.neg} <span class="text-xs font-normal text-slate-500">(${negPct}%)</span>`;
+            document.getElementById('liveNeuCount').innerHTML = `${liveCounts.neu} <span class="text-xs font-normal text-slate-500">(${neuPct}%)</span>`;
+
+            // 3. Update Chart
+            updateLiveChart(comment.score);
+        }
+
+        function addChatBubble(comment) {
+            const box = document.getElementById('liveChatBox');
+            const div = document.createElement('div');
+
+            // Color code border or bg based on sentiment
+            let borderClass = 'border-slate-100';
+            if (comment.sentiment === 'Positive') borderClass = 'border-green-200 bg-green-50/30';
+            else if (comment.sentiment === 'Negative') borderClass = 'border-red-200 bg-red-50/30';
+
+            div.className = `flex gap-3 items-start p-3 rounded-lg border ${borderClass} message-anim shadow-sm`;
+            div.innerHTML = `
+                <div class="h-8 w-8 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center text-xs font-bold text-slate-600">
+                    ${comment.author.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-xs font-bold text-slate-700">${comment.author}</span>
+                        <span class="text-[10px] text-slate-400">Now</span>
+                    </div>
+                    <p class="text-sm text-slate-800 leading-snug">${comment.comment}</p>
+                </div>
+            `;
+
+            box.appendChild(div);
+
+            // Scroll to bottom
+            box.scrollTop = box.scrollHeight;
+
+            // Limit DOM nodes? Keep last 50
+            if (box.children.length > 50) {
+                box.removeChild(box.children[0]);
+            }
+        }
+
+        function updateLiveChart(score) {
+            if (!charts.live) return;
+
+            const data = charts.live.data;
+
+            // Remove first
+            data.labels.shift();
+            data.datasets[0].data.shift();
+
+            // Add new
+            data.labels.push('');
+            data.datasets[0].data.push(score);
+
+            charts.live.update('none'); // 'none' for performance? Or default for animation
+        }
+
+        function renderTable(comments) {
+            const tbody = document.getElementById('commentsTableBody');
+            tbody.innerHTML = '';
+            comments.slice(0, 5000).forEach(c => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+
+                let badgeClass = 'bg-slate-100 text-slate-700';
+                if (c.sentiment === 'Positive') badgeClass = 'bg-green-100 text-green-700';
+                if (c.sentiment === 'Negative') badgeClass = 'bg-red-100 text-red-700';
+
+                const age = timeAgo(c.date);
+
+                tr.innerHTML = `
+                    <td class="p-4 flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 uppercase">${c.author ? c.author.substring(0, 1) : '?'}</div>
+                        <span class="font-medium text-slate-700 truncate max-w-[120px]">${c.author}</span>
+                    </td>
+                    <td class="p-4 text-slate-600 truncate max-w-xs" title="${c.comment.replace(/"/g, '&quot;')}">${c.comment}</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded-md text-xs font-bold ${badgeClass}">${c.sentiment}</span></td>
+                    <td class="p-4 text-xs font-mono text-slate-400">${c.confidence || 'N/A'}</td>
+                    <td class="p-4 text-xs text-slate-500">${age}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function timeAgo(dateString) {
+            if (!dateString || dateString === 'nan' || dateString === 'NaT') return 'N/A';
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'N/A';
+
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+
+            if (seconds < 60) return "Just now";
+
+            const intervals = {
+                year: 31536000,
+                month: 2592000,
+                day: 86400,
+                hour: 3600,
+                minute: 60
+            };
+
+            for (let [unit, secondsInUnit] of Object.entries(intervals)) {
+                const interval = Math.floor(seconds / secondsInUnit);
+                if (interval >= 1) {
+                    return interval + " " + unit + (interval === 1 ? "" : "s") + " ago";
+                }
+            }
+            return "Just now";
+        }
+
+        function filterTable() {
+            const term = document.getElementById('tableSearch').value.toLowerCase();
+            const rows = document.getElementById('commentsTableBody').querySelectorAll('tr');
+            rows.forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+            });
+        }
+
+        async function downloadReportPDF() {
+            if (!currentData) return alert("Please analyze a video first.");
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // --- Temporarily show hidden tabs to render canvas ---
+            const dashView = document.getElementById('view-dashboard');
+            const analView = document.getElementById('view-analysis');
+            const dashHidden = dashView.classList.contains('hidden');
+            const analHidden = analView.classList.contains('hidden');
+            
+            if (dashHidden) {
+                dashView.classList.remove('hidden');
+                dashView.style.position = 'absolute';
+                dashView.style.top = '-9999px';
+                dashView.style.display = 'block';
+            }
+            if (analHidden) {
+                analView.classList.remove('hidden');
+                analView.style.position = 'absolute';
+                analView.style.top = '-9999px';
+                analView.style.display = 'block';
+            }
+
+            // Force charts to resize back to their container dimensions
+            if (charts.donut) charts.donut.resize();
+            if (charts.trend) charts.trend.resize();
+
+            // Give the browser a tick to apply layout changes and render
+            await new Promise(r => setTimeout(r, 150));
+
+            // Helper to get image with white background
+            function getWhiteBgImage(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas || canvas.width === 0) return null;
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const ctx = tempCanvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                ctx.drawImage(canvas, 0, 0);
+                return tempCanvas.toDataURL("image/jpeg", 1.0);
+            }
+
+            // --- Title ---
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(22);
+            doc.setTextColor(124, 58, 237); // Purple #7c3aed
+            doc.text("Sentiment Analysis Report", 105, 20, { align: "center" });
+
+            // --- Meta Info ---
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(12);
+            doc.setTextColor(30, 41, 59); // Dark Slate #1e293b
+
+            let y = 40;
+            doc.text(`Video: ${currentData.meta.title.substring(0, 50)}${currentData.meta.title.length > 50 ? '...' : ''}`, 15, y);
+            y += 10;
+            doc.text(`Channel: ${currentData.meta.channelTitle}`, 15, y);
+            y += 10;
+            doc.text(`Total Comments: ${currentData.comments.length.toLocaleString()}`, 15, y);
+
+            // --- Divider ---
+            y += 5;
+            doc.setDrawColor(226, 232, 240); // Slate-200
+            doc.line(15, y, 195, y);
+
+            // --- Sentiment Breakdown ---
+            y += 15;
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("Sentiment Breakdown", 15, y);
+
+            y += 15;
+            doc.setFontSize(12);
+
+            const total = currentData.comments.length;
+            const posPct = ((currentData.counts.Positive / total) * 100).toFixed(1) + "%";
+            const negPct = ((currentData.counts.Negative / total) * 100).toFixed(1) + "%";
+            const neuPct = ((currentData.counts.Neutral / total) * 100).toFixed(1) + "%";
+
+            // Positive (Green)
+            doc.setTextColor(34, 197, 94); // #22c55e
+            doc.text(`Positive: ${posPct}`, 15, y);
+
+            // Negative (Red)
+            doc.setTextColor(239, 68, 68); // #ef4444
+            doc.text(`Negative: ${negPct}`, 85, y);
+
+            // Neutral (Gray)
+            doc.setTextColor(100, 116, 139); // #64748b
+            doc.text(`Neutral: ${neuPct}`, 155, y);
+
+            // --- AI Narrative ---
+            y += 20;
+            doc.setTextColor(30, 41, 59); // Reset to dark
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("AI Narrative Summary", 15, y);
+
+            y += 10;
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+
+            const narrativeLines = doc.splitTextToSize(currentData.narrative || "No narrative available.", 180);
+            doc.text(narrativeLines, 15, y);
+
+            // --- Chart Image ---
+            y += (narrativeLines.length * 5) + 15; // Dynamic spacing based on text length
+
+            if (y > 200) {
+                doc.addPage();
+                y = 20;
+            }
+
+            const chartImg = getWhiteBgImage('sentimentChart');
+            if (chartImg) {
+                try {
+                    doc.addImage(chartImg, 'JPEG', 55, y, 100, 100); // Centered image
+                } catch (e) {
+                    console.error("Could not add chart to PDF", e);
+                }
+            }
+
+            // Add Trend Graph if available
+            y += 110;
+            if (y > 250) {
+                doc.addPage();
+                y = 20;
+            }
+
+            const trendImg = getWhiteBgImage('trendChart');
+            if (trendImg) {
+                try {
+                    doc.addImage(trendImg, 'JPEG', 15, y, 180, 80);
+                } catch (e) {
+                    console.error("Could not add trend chart", e);
+                }
+            }
+
+            // Restore original visibility state
+            if (dashHidden) {
+                dashView.classList.add('hidden');
+                dashView.style.position = '';
+                dashView.style.top = '';
+                dashView.style.display = '';
+            }
+            if (analHidden) {
+                analView.classList.add('hidden');
+                analView.style.position = '';
+                analView.style.top = '';
+                analView.style.display = '';
+            }
+
+            doc.save("analysis_report.pdf");
+        }
+
+
+        function downloadReportCSV() {
+            if (!currentData) return alert("Please analyze a video first.");
+
+            // Add Age to CSV
+            let csv = "Name,Comment,Age,Sentiment,Confidence\n" + currentData.comments.map(c => {
+                // Calculate age using simple logic or just put date
+                // Let's put the ISO date for CSV accuracy
+                return `"${c.author}","${c.comment.replace(/"/g, '""')}","${c.date}","${c.sentiment}","${c.confidence}%"`;
+            }).join("\n");
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = "sentiment_data.csv"; a.click();
+        }
+
         async function testSentiment() {
-            const text = document.getElementById('testText').value;
+            const inputEl = document.getElementById('sandboxInput');
+            const text = inputEl.value.trim();
             if (!text) return;
 
-            const btn = document.querySelector('.ai-test-card button');
+            const btn = document.querySelector('button[onclick="testSentiment()"]');
+            const originalContent = btn.innerHTML;
+
+            // Loading state
+            btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            inputEl.disabled = true;
 
             try {
                 const res = await fetch('/predict_text', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: text })
+                    body: JSON.stringify({ text })
                 });
                 const data = await res.json();
 
-                const resultDiv = document.getElementById('testResult');
-                const label = document.getElementById('testLabel');
-                const conf = document.getElementById('testConf');
+                const resultDiv = document.getElementById('sandboxResult');
+                const bar = document.getElementById('sandboxBar');
+                const label = document.getElementById('sandboxLabel');
+                const score = document.getElementById('sandboxScore');
 
                 resultDiv.classList.remove('hidden');
-                label.innerText = data.label.toUpperCase();
-                conf.innerText = data.confidence + "%";
 
-                if (data.label === 'Positive') {
-                    label.style.color = '#10B981';
-                    resultDiv.style.borderColor = '#10B981';
-                } else if (data.label === 'Negative') {
-                    label.style.color = '#EF4444';
-                    resultDiv.style.borderColor = '#EF4444';
-                } else {
-                    label.style.color = '#6B7280';
-                    resultDiv.style.borderColor = '#6B7280';
-                }
+                // Colors
+                let colorClass = 'bg-slate-500';
+                if (data.label === 'Positive') colorClass = 'bg-gradient-to-r from-green-500 to-emerald-600';
+                if (data.label === 'Negative') colorClass = 'bg-gradient-to-r from-red-500 to-orange-600';
+                if (data.label === 'Neutral') colorClass = 'bg-slate-500';
+
+                // Reset animation
+                bar.className = 'absolute inset-0 bg-slate-800 transition-none';
+                bar.style.width = '0%';
+
+                // Trigger animation
+                setTimeout(() => {
+                    bar.className = `absolute inset-0 ${colorClass} transition-all duration-700 ease-out flex items-center px-4`;
+                    bar.style.width = '100%';
+                }, 50);
+
+                label.innerText = data.label;
+                score.innerText = data.confidence + "%";
 
             } catch (e) {
-                alert("Error predicting text");
+                alert("Prediction Error: " + e.message);
             } finally {
-                btn.innerHTML = '<i class="fa-solid fa-bolt"></i>';
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                inputEl.disabled = false;
+                inputEl.focus();
             }
         }
-
-        // --- Navigation Logic ---
-        document.querySelectorAll('.nav-item').forEach(link => {
-            link.addEventListener('click', (e) => {
-                // Remove active class from all
-                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-
-                // Add to clicked
-                e.currentTarget.classList.add('active');
-
-                // Get target section
-                const targetId = e.currentTarget.getAttribute('href').substring(1) || 'dashboard'; // default to dashboard if #
-
-                // Hide all sections
-                ['dashboard', 'analysis', 'comments', 'reports'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.classList.add('hidden');
-                });
-
-                // Show target
-                const targetEl = document.getElementById(targetId);
-                if (targetEl) targetEl.classList.remove('hidden');
-            });
-        });
-
-        // --- Search/Filter Logic for Table ---
-        function filterTable() {
-            const input = document.getElementById('tableSearch');
-            const filter = input.value.toUpperCase();
-            const table = document.querySelector("#fullCommentsTableBody");
-            const tr = table.getElementsByTagName("tr");
-
-            for (let i = 0; i < tr.length; i++) {
-                const tdComment = tr[i].getElementsByTagName("td")[1];
-                const tdAuthor = tr[i].getElementsByTagName("td")[0];
-                if (tdComment || tdAuthor) {
-                    const txtValue = (tdComment.textContent || tdComment.innerText) + (tdAuthor.textContent || tdAuthor.innerText);
-                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        tr[i].style.display = "";
-                    } else {
-                        tr[i].style.display = "none";
-                    }
-                }
-            }
-        }
-
-        // Generate PDF Report using jsPDF
-        function generatePDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(20);
-            doc.setTextColor(99, 102, 241); // Indigo color
-            doc.text("YouTube Insight AI - Analysis Report", 15, 20);
-
-            doc.setFontSize(12);
-            doc.setTextColor(0, 0, 0);
-            doc.setFont("helvetica", "normal");
-
-            const title = document.getElementById('videoTitle').innerText;
-            doc.text("Video: " + title, 15, 30);
-            doc.text("Generated: " + new Date().toLocaleString(), 15, 36);
-
-            doc.setDrawColor(200);
-            doc.line(15, 40, 195, 40);
-
-            doc.setFont("helvetica", "bold");
-            doc.text("Sentiment Analysis Summary", 15, 50);
-
-            doc.setFont("helvetica", "normal");
-            doc.text("Total Comments: " + document.getElementById('totalComments').innerText, 15, 60);
-
-            doc.setTextColor(16, 185, 129);
-            doc.text("Positive: " + document.getElementById('posCountVal').innerText, 15, 70);
-
-            doc.setTextColor(239, 68, 68);
-            doc.text("Negative: " + document.getElementById('negCountVal').innerText, 15, 80);
-
-            doc.setTextColor(107, 114, 128);
-            doc.text("Neutral: " + document.getElementById('neuCountVal').innerText, 15, 90);
-
-            doc.setTextColor(0, 0, 0);
-            doc.text("AI Narrative:", 15, 105);
-            const narrative = document.getElementById('narrativeText').innerText;
-            const splitNarrative = doc.splitTextToSize(narrative, 180);
-            doc.text(splitNarrative, 15, 112);
-
-            doc.save("analysis_report.pdf");
-        }
-
-        function toggleNotifications() {
-            // Simple mock notification logic
-            const btn = document.querySelector('.header-actions .icon-btn');
-            const dot = btn.querySelector('.notification-dot');
-            if (dot) dot.style.display = 'none'; // Hide red dot
-
-            alert("🔔 Notifications:\n\n- System is online\n- Model VADER loaded successfully\n- No new alerts");
-        }
-
-        function checkSystemStatus() {
-            alert("✅ System Diagnostics:\n\n- Backend: Active (Waitress/Flask)\n- Sentiment Model: VADER (Valence Aware Dictionary)\n- API Quota: Optimal\n- Database: Connected (Pandas CSV)");
-        }
-
-        function downloadReport() {
-            // Check if we have data
-            const total = document.getElementById('totalComments').innerText;
-            if (total === '0') {
-                alert("No data to export. Please analyze a video first.");
-                return;
-            }
-
-            // Create a simple CSV content
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Metric,Value\n";
-            csvContent += "Total Comments," + total + "\n";
-            csvContent += "Positive," + document.getElementById('posCountVal').innerText + "\n";
-            csvContent += "Negative," + document.getElementById('negCountVal').innerText + "\n";
-            csvContent += "Neutral," + document.getElementById('neuCountVal').innerText + "\n";
-            csvContent += "Video," + document.getElementById('videoTitle').innerText.replace(/,/g, "") + "\n";
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "sentiment_summary.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // Removed featureNotImplemented as it is now implemented
     </script>
 </body>
 

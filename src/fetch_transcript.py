@@ -6,6 +6,10 @@ def get_video_id(url):
         return url.split("v=")[1].split("&")[0]
     elif "youtu.be/" in url:
         return url.split("youtu.be/")[1].split("?")[0]
+    elif "/live/" in url:
+        return url.split("/live/")[1].split("?")[0].strip("/")
+    elif "/shorts/" in url:
+        return url.split("/shorts/")[1].split("?")[0].strip("/")
     else:
         return url
 

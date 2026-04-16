@@ -1,11 +1,11 @@
-# 🎯 YouTube Insight AI - Project Showcase Scripts
+# 🎯 Sentiment Analysis for YouTube Comments using AI - Project Showcase Scripts
 
 This document contains professional, vivid, and technically accurate scripts for your project presentation, tailored specifically to your codebase (Flask + VADER + Chart.js).
 
 ---
 
 ## 🔹 1. Project Introduction (Opening Prompt)
-"Good morning/afternoon. My project is titled **'YouTube Insight AI: Advanced Sentiment Analysis for YouTube Comments'**. 
+"Good morning/afternoon. My project is titled **'Sentiment Analysis for YouTube Comments using AI'**. 
 
 In today's digital age, a single video can generate thousands of comments, making it impossible for creators or brands to manually read and understand audience feedback. **YouTube Insight AI** acts as an intelligent layer that automatically extracts, processes, and classifies thousands of comments in seconds. It provides an instant 'pulse check' of the audience—telling you not just *what* they are saying, but *how* they feel. This tool bridges the gap between raw data and actionable human insight."
 
@@ -95,7 +95,7 @@ This helps a creator decide if they need to allow comments, address a controvers
 3.  **Reply Analysis**: Analyzing how the *author* replies to comments to judge engagement."
 
 ## 🔹 13. Conclusion
-"In conclusion, **YouTube Insight AI** transforms the noise of social media into clear, strategic signals. It combines efficient NLP algorithms with a high-quality user experience to solve the real problem of information overload for creators."
+"In conclusion, **Sentiment Analysis for YouTube Comments using AI** transforms the noise of social media into clear, strategic signals. It combines efficient NLP algorithms with a high-quality user experience to solve the real problem of information overload for creators."
 
 ## 🔹 14. One-Line Interview Hook
 "I built an AI-powered analytics dashboard that processes thousands of YouTube comments in real-time to visualize audience sentiment and generate automated narrative summaries."

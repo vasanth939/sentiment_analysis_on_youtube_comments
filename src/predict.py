@@ -1,32 +1,57 @@
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
-import nltk
+import joblib
+import numpy as np
+import warnings
+from src.preprocess import normalize_text, clean_text
 
-# Download VADER lexicon (only needs to be done once)
-# Download VADER lexicon (only needs to be done once)
-print("Loading Sentiment Analysis Models...")
-nltk.download('vader_lexicon', quiet=True)
+# Suppress sklearn warnings about feature names
+warnings.filterwarnings("ignore", category=UserWarning)
 
-sid = SentimentIntensityAnalyzer()
+print("Loading ML Sentiment Analysis Models...")
+model = joblib.load("model/sentiment_model.pkl")
+vectorizer = joblib.load("model/vectorizer.pkl")
 
 def predict_sentiment(comment):
-    # VADER works best with raw text
-    scores = sid.polarity_scores(comment)
-    compound = scores['compound']
+    text = str(comment)
+    text = normalize_text(text)
+    text = clean_text(text)
     
-    # Calculate confidence as the highest probability among pos, neg, neu
-    # This gives a "how sure is VADER this is X" metric
-    # Note: 'compound' is a normalized metric, 'pos'/'neg'/'neu' are ratios
-    confidence = max(scores['pos'], scores['neg'], scores['neu']) * 100
+    # Handle empty text after processing
+    if not text.strip():
+        return {"label": "Neutral", "score": 0.0, "confidence": 0.0}
     
-    if compound >= 0.05:
-        label = "Positive"
-    elif compound <= -0.05:
-        label = "Negative"
-    else:
-        label = "Neutral"
+    X = vectorizer.transform([text])
+    
+    try:
+        # LinearSVC prediction
+        pred = model.predict(X)[0]
+        decision = model.decision_function(X)[0]
+        
+        # Binary Classification mapping
+        if pred == 1:
+            label = "Positive"
+        else:
+            label = "Negative"
+            
+        # Sigmoid probability calculation for confidence
+        prob = 1 / (1 + np.exp(-decision))
+        
+        if label == "Positive":
+            confidence = prob * 100
+            score = decision
+        else:
+            confidence = (1 - prob) * 100
+            score = decision
+            
+        # Optional neutral threshold based on distance to decision boundary
+        if abs(decision) < 0.2:
+            label = "Neutral"
+            
+    except Exception as e:
+        print(f"Error during prediction: {e}")
+        return {"label": "Neutral", "score": 0.0, "confidence": 0.0}
         
     return {
         "label": label,
-        "score": compound,
-        "confidence": round(confidence, 1)
+        "score": float(score),
+        "confidence": round(float(confidence), 1)
     }

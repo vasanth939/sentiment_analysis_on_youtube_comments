@@ -80,32 +80,58 @@ def get_common_words(comments_list, top_n=50):
 def get_sentiment_trend(results):
     """
     Aggregates sentiment over time.
+    Automatically adjusts granularity (Day, Hour, Minute) based on time span.
     results: List of dicts with 'date' and 'sentiment'
-    Returns: Lists of dates, pos_counts, neg_counts for Chart.js
+    Returns: Lists of dates, pos_counts, neg_counts, neu_counts for Chart.js
     """
     if not results:
-        return {}, {}, {}
+        return [], [], [], []
 
     # Convert to DataFrame
     df = pd.DataFrame(results)
+    
     # Ensure date parsing
     try:
-        df['date'] = pd.to_datetime(df['date']).dt.date
+        df['datetime'] = pd.to_datetime(df['date'], errors='coerce', utc=True)
+        # Drop rows with invalid dates
+        df = df.dropna(subset=['datetime'])
     except Exception:
-        return [], [], []
+        return [], [], [], []
 
-    # Group by Date and Sentiment
-    trend = df.groupby(['date', 'sentiment']).size().unstack(fill_value=0)
+    if df.empty:
+        return [], [], [], []
+
+    # Determine time span
+    min_time = df['datetime'].min()
+    max_time = df['datetime'].max()
+    time_span = max_time - min_time
+
+    # Adaptive Grouping
+    time_span_seconds = time_span.total_seconds()
+
+    if time_span_seconds < 60: # Less than 1 minute -> Group by Second
+        df['time_group'] = df['datetime'].dt.strftime('%H:%M:%S')
+    elif time_span_seconds < 21600: # Less than 6 hours -> Group by Minute (better for live streams)
+        df['time_group'] = df['datetime'].dt.strftime('%H:%M')
+    elif time_span_seconds < 86400 * 3: # Less than 3 days -> Group by Hour
+        df['time_group'] = df['datetime'].dt.strftime('%Y-%m-%d %H:00')
+    else: # Default -> Group by Date
+        df['time_group'] = df['datetime'].dt.strftime('%Y-%m-%d')
+
+    # Group by time_group and Sentiment
+    trend = df.groupby(['time_group', 'sentiment']).size().unstack(fill_value=0)
     
     # Ensure columns exist
     if 'Positive' not in trend.columns: trend['Positive'] = 0
     if 'Negative' not in trend.columns: trend['Negative'] = 0
+    if 'Neutral' not in trend.columns: trend['Neutral'] = 0
     
-    # Sort by date
+    # Sort by date/time
     trend = trend.sort_index()
     
     dates = [str(d) for d in trend.index]
     pos = trend['Positive'].tolist()
     neg = trend['Negative'].tolist()
+    neu = trend['Neutral'].tolist()
     
-    return dates, pos, neg
+    return dates, pos, neg, neu

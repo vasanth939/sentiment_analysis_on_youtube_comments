@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run with Hot Reload (Live Server Mode)",
+            "type": "python",
+            "request": "launch",
+            "program": "app.py",
+            "console": "integratedTerminal",
+            "env": {
+                "FLASK_ENV": "development"
+            },
+            "justMyCode": true
+        }
+    ]
+}
